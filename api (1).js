@@ -67,7 +67,7 @@ async function loadAllPrices() {
         ok++;
       } else {
         fail++;
-        // Handle rate limit messages from Alpha Vantage
+
         const msg = data['Note'] || data['Information'] || '';
         if (msg) {
           status.textContent = '⚠ Rate limit reached — wait 60s and try again (free: 25 req/day)';
@@ -80,7 +80,7 @@ async function loadAllPrices() {
       fail++;
     }
 
-    // Respect free tier rate limits (5 req/min → 250ms gap)
+
     await new Promise(r => setTimeout(r, 250));
   }
 
@@ -88,7 +88,7 @@ async function loadAllPrices() {
   btn.textContent = '↻ Refresh';
 
   if (ok > 0) {
-    // Switch UI to "live data" mode
+
     dataIsReal = true;
     document.getElementById('apiBanner').classList.add('ok');
     document.getElementById('bannerLabel').textContent     = '✓ LIVE DATA';
