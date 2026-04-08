@@ -1,10 +1,3 @@
-// ═══════════════════════════════════════════════════════════════
-// GREEN EQUITY SIMULATOR — charts.js
-// Member 6: Chart.js chart instances, CO₂ impact calculations & rendering
-// ═══════════════════════════════════════════════════════════════
-
-// ─── SHARED CHART OPTIONS ────────────────────────────────────────
-// Base configuration reused across all Chart.js instances
 const baseOpts = {
   responsive: true,
   maintainAspectRatio: false,
@@ -35,8 +28,6 @@ const baseOpts = {
   animation: { duration: 300 },
 };
 
-// ─── GREEN INDEX CHART ────────────────────────────────────────────
-// Displayed on the Market page — simulated green equity index
 function initIndexChart() {
   indexChartInst = new Chart(document.getElementById('indexChart'), {
     type: 'line',
@@ -53,8 +44,7 @@ function initIndexChart() {
   });
 }
 
-// ─── PORTFOLIO EQUITY CURVE CHART ────────────────────────────────
-// Displayed on the Portfolio page — tracks total portfolio value over time
+
 function renderPfChart() {
   if (pfChartInst) pfChartInst.destroy();
   pfChartInst = new Chart(document.getElementById('pfChart'), {
@@ -72,8 +62,6 @@ function renderPfChart() {
   });
 }
 
-// ─── CARBON HISTORY CHART ────────────────────────────────────────
-// Displayed on the Impact page — CO₂ offset accumulation over time
 function renderCarbonChart() {
   if (carbonChartInst) carbonChartInst.destroy();
   carbonChartInst = new Chart(document.getElementById('carbonChart'), {
@@ -91,12 +79,6 @@ function renderCarbonChart() {
   });
 }
 
-// ─── CO₂ IMPACT CALCULATION ───────────────────────────────────────
-/**
- * Calculates total CO₂ offset based on current holdings.
- * Each stock has a co2 coefficient (kg offset per $1 invested per year).
- * Returns: { total: number, byS: { sector: kg } }
- */
 function calcCO2() {
   let total = 0;
   const byS = {};
@@ -113,22 +95,17 @@ function calcCO2() {
   return { total, byS };
 }
 
-// ─── IMPACT PAGE RENDERER ─────────────────────────────────────────
-// Populates all elements on the Impact page with current CO₂ data
 function renderImpact() {
   const { total, byS } = calcCO2();
 
-  // CO₂ big number and progress bar
   document.getElementById('co2Big').textContent  = Math.round(total).toLocaleString();
   document.getElementById('co2Bar').style.width  = Math.min(100, (total / 5000) * 100) + '%';
   document.getElementById('co2Equiv').textContent = `Equivalent to planting ${Math.round(total / 21)} trees`;
 
-  // Equivalency cards
   document.getElementById('treesEq').textContent  = Math.round(total / 21);
   document.getElementById('kwh').textContent      = Math.round(total * 1.2).toLocaleString();
   document.getElementById('carMiles').textContent = Math.round(total * 4.3).toLocaleString();
 
-  // Sector breakdown bars
   const maxS = Math.max(1, ...Object.values(byS));
   document.getElementById('sectorBreakdown').innerHTML =
     Object.entries(byS).map(([sec, val]) => {
@@ -146,5 +123,4 @@ function renderImpact() {
   renderCarbonChart();
 }
 
-// ─── BOOT: Initialize charts on page load ────────────────────────
 initIndexChart();
