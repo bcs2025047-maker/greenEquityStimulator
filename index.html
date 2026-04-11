@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Green Equity Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══ NAVIGATION ═══ -->
+  <nav>
+    <div class="logo">Green<span>Equity</span> Simulator</div>
+    <div class="nav-pills">
+      <button class="nav-pill active" onclick="showPage('market',this)">Market</button>
+      <button class="nav-pill" onclick="showPage('portfolio',this)">Portfolio</button>
+      <button class="nav-pill" onclick="showPage('impact',this)">Impact</button>
+      <button class="nav-pill" onclick="showPage('learn',this)">Learn</button>
+    </div>
+    <div class="portfolio-val" id="navVal">$10,000.00</div>
+  </nav>
+
+  <!-- ═══ API KEY BANNER ═══ -->
+  <div class="api-banner" id="apiBanner">
+    <span class="api-label" id="bannerLabel">⚠ API KEY REQUIRED</span>
+    <input class="api-input" id="apiKeyInput" type="text" placeholder="Paste your free Alpha Vantage API key here…" />
+    <button class="btn btn-sm" id="loadBtn" onclick="loadAllPrices()">Load real prices</button>
+    <span class="api-status" id="apiStatus">Get a free key at alphavantage.co · 25 req/day free</span>
+  </div>
+
+  <!-- ═══ TICKER TAPE ═══ -->
+  <div class="ticker"><div class="ticker-inner" id="tickerInner"></div></div>
+
+  <!-- ═══ MARKET PAGE ═══ -->
+  <div class="page active" id="page-market">
+    <div class="hero">
+      <h1>Invest in a <em>greener</em> future</h1>
+      <p>Real market prices. Simulated trades. Measurable carbon impact — track both your financial ROI and CO₂ offset in one dashboard.</p>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="val" id="cashDisplay">$10,000</div><div class="lbl">Cash balance</div></div>
+        <div class="hero-stat"><div class="val" id="co2Hero">0 kg</div><div class="lbl">CO₂ offset / yr</div></div>
+        <div class="hero-stat"><div class="val" id="roiHero">0.00%</div><div class="lbl">Portfolio ROI</div></div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:1rem;">
+      <div class="card">
+        <div class="card-title">Green index</div>
+        <div class="chart-wrap"><canvas id="indexChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Sector performance</div>
+        <div id="sectorPerf" style="margin-top:.5rem;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
+        <div class="card-title" style="margin:0;">Green equities market <span id="dataSourceBadge" class="demo-badge">DEMO PRICES</span></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-ghost btn-sm" id="refreshBtn" onclick="loadAllPrices()">↻ Refresh</button>
+          <select id="sectorFilter" onchange="renderStocks()">
+            <option value="all">All sectors</option>
+            <option value="Solar">Solar</option>
+            <option value="Wind">Wind</option>
+            <option value="EV">EV</option>
+            <option value="Hydro">Hydro</option>
+            <option value="Storage">Storage</option>
+            <option value="Efficiency">Efficiency</option>
+          </select>
+        </div>
+      </div>
+      <div id="stockList"></div>
+
+      <!-- Buy Panel -->
+      <div class="buy-panel" id="buyPanel">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:500;" id="buyTitle">Buy stock</div>
+            <div style="font-size:0.8rem;color:var(--muted);" id="buySubtitle"></div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="closeBuy()">✕</button>
+        </div>
+        <div class="buy-input-row">
+          <input type="number" id="buyQty" min="1" value="1" placeholder="Shares" oninput="updateBuyCost()" />
+          <span style="font-family:var(--mono);font-size:0.8rem;color:var(--muted);" id="buyCost">= $0.00</span>
+          <button class="btn" onclick="executeBuy()">Buy</button>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:6px;" id="buyCarbon"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PORTFOLIO PAGE ═══ -->
+  <div class="page" id="page-portfolio">
+    <div class="section-head">Your <em>portfolio</em></div>
+    <div class="grid-3" style="margin-bottom:1.25rem;">
+      <div class="card"><div class="card-title">Total value</div><div class="text-mono" style="font-size:1.6rem;" id="pfTotal">$10,000.00</div></div>
+      <div class="card"><div class="card-title">Amount invested</div><div class="text-mono" style="font-size:1.6rem;" id="pfInvested">$0.00</div></div>
+      <div class="card"><div class="card-title">Gain / Loss</div><div class="text-mono" style="font-size:1.6rem;" id="pfPnL">$0.00</div></div>
+    </div>
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-title">Holdings</div>
+      <div id="holdingsList"><div style="font-size:0.85rem;color:var(--muted);padding:1rem 0;text-align:center;">No positions yet — go to Market to make your first trade.</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Equity curve</div>
+      <div class="chart-wrap"><canvas id="pfChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ═══ IMPACT PAGE ═══ -->
+  <div class="page" id="page-impact">
+    <div class="section-head">Your environmental <em>impact</em></div>
+    <div class="grid-2" style="margin-bottom:1rem;">
+      <div class="card" style="text-align:center;">
+        <div class="card-title">CO₂ offset per year</div>
+        <div><span class="carbon-num" id="co2Big">0</span><span style="font-size:0.75rem;color:var(--muted);margin-left:4px;">kg CO₂ / yr</span></div>
+        <div style="margin:1rem 0;">
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--muted);margin-bottom:4px;"><span>0</span><span>Goal: 5,000 kg</span></div>
+          <div class="carbon-bar-wrap"><div class="carbon-bar" id="co2Bar" style="width:0%"></div></div>
+        </div>
+        <div style="font-size:0.78rem;color:var(--muted);" id="co2Equiv">Equivalent to planting 0 trees</div>
+      </div>
+      <div class="card">
+        <div class="card-title">By sector</div>
+        <div id="sectorBreakdown" style="margin-top:.5rem;"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-title">Carbon offset over time</div>
+      <div class="chart-wrap"><canvas id="carbonChart"></canvas></div>
+    </div>
+    <div class="grid-3">
+      <div class="card" style="text-align:center;"><div style="font-size:2rem;margin-bottom:6px;">🌳</div><div class="text-mono" style="font-size:1.3rem;" id="treesEq">0</div><div style="font-size:0.75rem;color:var(--muted);">Trees equivalent</div></div>
+      <div class="card" style="text-align:center;"><div style="font-size:2rem;margin-bottom:6px;">⚡</div><div class="text-mono" style="font-size:1.3rem;" id="kwh">0</div><div style="font-size:0.75rem;color:var(--muted);">kWh clean energy</div></div>
+      <div class="card" style="text-align:center;"><div style="font-size:2rem;margin-bottom:6px;">🚗</div><div class="text-mono" style="font-size:1.3rem;" id="carMiles">0</div><div style="font-size:0.75rem;color:var(--muted);">Car km avoided</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ LEARN PAGE ═══ -->
+  <div class="page" id="page-learn">
+    <div class="section-head">Daily <em>insights</em></div>
+    <div id="insightsList"></div>
+  </div>
+
+</div><!-- /.app -->
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<!-- Dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+<!-- App scripts (order matters) -->
+<script src="js/data.js"></script>
+<script src="js/api.js"></script>
+<script src="js/trading.js"></script>
+<script src="js/charts.js"></script>
+</body>
+</html>
